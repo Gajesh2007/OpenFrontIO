@@ -4,6 +4,7 @@ import { GamePhase, GameServer } from "./GameServer";
 import { Client } from "./Client";
 import { Logger } from "winston";
 import { ServerConfig } from "../core/configuration/Config";
+import { tryCreateWager, tryPayoutWager, tryCancelWager } from "./wager/WagerService";
 
 export class GameManager {
   private games: Map<GameID, GameServer> = new Map();
@@ -83,6 +84,8 @@ export class GameManager {
           setTimeout(() => {
             try {
               game.start();
+              // Attempt to create wager on-chain if configured
+              void tryCreateWager(game, this.log);
             } catch (error) {
               this.log.error(`error starting game ${id}: ${error}`);
             }
@@ -93,6 +96,13 @@ export class GameManager {
       if (phase === GamePhase.Finished) {
         try {
           game.end();
+          // If concluded with a winner, attempt payout
+          if (game.winner !== null) {
+            void tryPayoutWager(game, this.log);
+          } else {
+            // If ended without a winner, cancel wager
+            void tryCancelWager(game, this.log);
+          }
         } catch (error) {
           this.log.error(`error ending game ${id}: ${error}`);
         }

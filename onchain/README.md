@@ -51,6 +51,22 @@ $ anvil
 $ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
 ```
 
+### WagerPot
+
+Deploy `WagerPot`:
+
+```shell
+export ETH_RPC_URL=...
+export PRIVATE_KEY=...
+forge script script/WagerPot.s.sol --rpc-url $ETH_RPC_URL --broadcast
+```
+
+Server env vars to enable wagering integration:
+
+- `ETH_RPC_URL`
+- `WAGER_OWNER_PRIVATE_KEY`
+- `WAGER_CONTRACT_ADDRESS`
+
 ### Cast
 
 ```shell

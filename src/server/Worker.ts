@@ -151,6 +151,17 @@ export async function startWorker() {
     }),
   );
 
+  app.get(
+    "/api/wager/:id",
+    gatekeeper.httpHandler(LimiterType.Get, async (req, res) => {
+      const game = gm.game(req.params.id);
+      if (game === null) {
+        return res.status(404).json({ error: "Game not found" });
+      }
+      res.json({ wager: game.wager ?? { enabled: false } });
+    }),
+  );
+
   // Add other endpoints from your original server
   app.post(
     "/api/start_game/:id",

@@ -158,5 +158,20 @@ function handleWinner(
       winnerKey,
     },
   );
-  gs.archiveGame();
+  // Archive and trigger wager payout if enabled
+  try {
+    gs.archiveGame();
+  } finally {
+    // Fire-and-forget: server process that owns the contract should handle payout via HTTP webhook or background cron
+    // Here we just log the intent with game metadata for an external orchestrator.
+    if (gs.wager?.enabled) {
+      log.info("wager: game concluded, trigger payout", {
+        gameID: gs.id,
+        contract: gs.wager.contractAddress,
+        buyInWei: gs.wager.buyInWei,
+        players: gs.wager.players,
+        winner: gs.winner?.winner,
+      });
+    }
+  }
 }

@@ -512,6 +512,29 @@ class Client {
           (ad as HTMLElement).style.display = "none";
         });
 
+        // Mount wager panel for wallet & buy-in payments (if enabled)
+        const mount = document.createElement("div");
+        mount.id = "wager-root";
+        document.body.appendChild(mount);
+        import("./components/WagerPanel").then(() => {
+          const el = document.createElement("wager-panel") as any;
+          el.lobby = {
+            gameID: lobby.gameID,
+            serverConfig: config,
+            pattern: this.userSettings.getSelectedPattern(),
+            flag:
+              this.flagInput === null || this.flagInput.getCurrentFlag() === "xx"
+                ? ""
+                : this.flagInput.getCurrentFlag(),
+            playerName: this.usernameInput?.getCurrentUsername() ?? "",
+            token: getPlayToken(),
+            clientID: lobby.clientID,
+            gameStartInfo: lobby.gameStartInfo ?? lobby.gameRecord?.info,
+            gameRecord: lobby.gameRecord,
+          };
+          mount.appendChild(el);
+        });
+
         // show when the game loads
         const startingModal = document.querySelector(
           "game-starting-modal",

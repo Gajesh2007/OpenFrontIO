@@ -147,6 +147,24 @@ export const GameConfigSchema = z.object({
   instantBuild: z.boolean(),
   maxPlayers: z.number().optional(),
   playerTeams: TeamCountConfigSchema.optional(),
+  // Optional wagering configuration
+  wagerEnabled: z.boolean().optional(),
+  // buy-in specified in wei as a decimal string to avoid float issues
+  wagerBuyInWei: z
+    .string()
+    .regex(/^\d+$/, { message: "wagerBuyInWei must be a decimal string in wei" })
+    .optional(),
+  // Allow host to pre-register players' wallet addresses (0x...)
+  wagerPlayers: z
+    .string()
+    .regex(/^0x[0-9a-fA-F]{40}$/)
+    .array()
+    .optional(),
+  // Optionally override contract address per-lobby
+  wagerContractAddress: z
+    .string()
+    .regex(/^0x[0-9a-fA-F]{40}$/)
+    .optional(),
 });
 
 export const TeamSchema = z.string();

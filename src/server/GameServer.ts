@@ -66,6 +66,14 @@ export class GameServer {
 
   private readonly websockets: Set<WebSocket> = new Set();
 
+  // Wager integration metadata for this game
+  public wager?: {
+    enabled: boolean;
+    contractAddress?: string;
+    buyInWei?: string;
+    players?: string[];
+  };
+
   winnerVotes: Map<
     string,
     { winner: ClientSendWinnerMessage; ips: Set<string> }
@@ -81,6 +89,15 @@ export class GameServer {
   ) {
     this.log = log_.child({ gameID: id });
     this.lobbyCreatorID = lobbyCreatorID ?? undefined;
+    // Initialize wager metadata from gameConfig if provided
+    this.wager = gameConfig.wagerEnabled
+      ? {
+          enabled: true,
+          buyInWei: gameConfig.wagerBuyInWei,
+          contractAddress: gameConfig.wagerContractAddress,
+          players: gameConfig.wagerPlayers,
+        }
+      : undefined;
   }
 
   public updateGameConfig(gameConfig: Partial<GameConfig>): void {

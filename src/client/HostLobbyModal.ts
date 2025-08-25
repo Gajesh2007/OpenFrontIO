@@ -54,6 +54,11 @@ export class HostLobbyModal extends LitElement {
   @state() private disabledUnits: UnitType[] = [];
   @state() private lobbyCreatorClientID = "";
   @state() private lobbyIdVisible = true;
+  // Wager fields
+  @state() private wagerEnabled = false;
+  @state() private wagerBuyInEth = "0";
+  @state() private wagerPlayers: string[] = [];
+  @state() private wagerContractAddress: string | undefined = undefined;
 
   private playersInterval: ReturnType<typeof setTimeout> | null = null;
   // Add a new timer for debouncing bot changes
@@ -236,6 +241,50 @@ export class HostLobbyModal extends LitElement {
                   ${translateText("map.random")}
                 </div>
               </div>
+            </div>
+          </div>
+
+          <!-- Wagering (optional) -->
+          <div class="options-section">
+            <div class="option-title">Wagering</div>
+            <div class="option-cards">
+              <label class="flex items-center gap-2">
+                <input type="checkbox" .checked=${this.wagerEnabled} @change=${(e: Event) => {
+                  this.wagerEnabled = (e.target as HTMLInputElement).checked;
+                  void this.putGameConfig();
+                }} />
+                Enable wagering
+              </label>
+              ${this.wagerEnabled
+                ? html`
+                    <div class="grid grid-cols-1 gap-2 mt-2">
+                      <label class="flex items-center gap-2">
+                        Buy-in (ETH)
+                        <input type="text" class="input" .value=${this.wagerBuyInEth} @input=${(e: Event) => {
+                          this.wagerBuyInEth = (e.target as HTMLInputElement).value;
+                          void this.putGameConfig();
+                        }} />
+                      </label>
+                      <label class="flex items-center gap-2">
+                        Contract Address (optional)
+                        <input type="text" class="input" .value=${this.wagerContractAddress ?? ""} @input=${(e: Event) => {
+                          this.wagerContractAddress = (e.target as HTMLInputElement).value || undefined;
+                          void this.putGameConfig();
+                        }} />
+                      </label>
+                      <div>
+                        <div class="text-xs mb-1">Player Wallets (one per line)</div>
+                        <textarea class="input" .value=${this.wagerPlayers.join("\n")} @input=${(e: Event) => {
+                          this.wagerPlayers = (e.target as HTMLTextAreaElement).value
+                            .split(/\n+/)
+                            .map((s) => s.trim())
+                            .filter((s) => s.length > 0);
+                          void this.putGameConfig();
+                        }}></textarea>
+                      </div>
+                    </div>
+                  `
+                : ""}
             </div>
           </div>
 
@@ -666,6 +715,11 @@ export class HostLobbyModal extends LitElement {
           gameMode: this.gameMode,
           disabledUnits: this.disabledUnits,
           playerTeams: this.teamCount,
+          // Wagering optional fields
+          wagerEnabled: this.wagerEnabled,
+          wagerBuyInWei: this.ethToWei(this.wagerBuyInEth),
+          wagerPlayers: this.wagerPlayers,
+          wagerContractAddress: this.wagerContractAddress,
         } satisfies Partial<GameConfig>),
       },
     );
@@ -685,6 +739,18 @@ export class HostLobbyModal extends LitElement {
     const maps = Object.values(GameMapType);
     const randIdx = Math.floor(Math.random() * maps.length);
     return maps[randIdx] as GameMapType;
+  }
+
+  private ethToWei(eth: string): string | undefined {
+    if (!this.wagerEnabled) return undefined;
+    const trimmed = (eth ?? "0").toString().trim();
+    if (trimmed === "") return undefined;
+    // Simple converter without BigInt math libs: handle up to 18 decimals
+    const [whole, fracRaw] = trimmed.split(".");
+    const frac = (fracRaw ?? "").slice(0, 18).padEnd(18, "0");
+    const clean = `${whole.replace(/\D/g, "")}${frac.replace(/\D/g, "")}`;
+    if (!/^\d+$/.test(clean)) return undefined;
+    return clean.replace(/^0+/, "") || "0";
   }
 
   private async startGame() {
